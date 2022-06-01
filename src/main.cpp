@@ -21,9 +21,10 @@
 struct motor
 {
   byte TA, TB;
+  bool dir;
 };
 
-struct motor MotE = {A1A, A1B}, MotD = {B1A, B1B};
+struct motor MotE = {A1A, A1B, CW}, MotD = {B1A, B1B, CCW};
 
 void setup()
 {
@@ -64,40 +65,36 @@ void rotateAnalog(bool dir, struct motor mt, byte pwm, bool en = true)
 
 void stop()
 {
-  rotateDigital(CW, MotE, false);
-  rotateDigital(CW, MotD, false);
+  digitalWrite(MotE.TA, LOW);
+  digitalWrite(MotE.TB, LOW);
+  digitalWrite(MotD.TA, LOW);
+  digitalWrite(MotD.TB, LOW);
+}
+
+void accelerate(int from, int to, int rate)
+{
+  for (int i = from; i < to; i+=rate)
+  {
+    rotateAnalog(MotE.dir, MotE, i);
+    rotateAnalog(MotD.dir, MotD, i);
+    delay(2);
+  }
+  
+
 }
 
 void forward()
 {
-  rotateDigital(CW, MotE);
-  rotateDigital(CW, MotD);
+  accelerate(30, 255, 2);
+  rotateAnalog(MotE.dir, MotE, 255);
+  rotateAnalog(MotD.dir, MotD, 255);
 }
 
-void left()
-{
-  rotateDigital(CW, MotD);
-  rotateAnalog(CW, MotE, 127);
-}
-
-void right()
-{
-  rotateDigital(CW, MotE);
-  rotateDigital(CW, MotD, 127);
-}
 
 void loop()
 {
   forward();
-  delay(1000);
+  delay(5000);
   stop();
-  delay(3000);
-  left();
-  delay(1000);
-  stop();
-  delay(3000);
-  right();
-  delay(1000);
-  stop();
-  delay(3000);
-}
+  delay(2000);
+} 
