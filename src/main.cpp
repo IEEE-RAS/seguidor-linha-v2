@@ -12,6 +12,17 @@
 #define B1B 10
 
 /**
+ * @brief Pinos dos sensores de linha, começando com o sensor mais à esquerda
+ * (SEE) passando pelo sensor ao centro (SC) até o sensor mais à direita (SDD)
+ *
+ */
+#define SEE A3
+#define SE A4
+#define SC A5
+#define SD A6
+#define SDD A7
+
+/**
  * @brief Definição auxiliar para sentido de rotação
  *
  */
@@ -25,14 +36,6 @@ struct motor
 };
 
 struct motor MotE = {A1A, A1B, CW}, MotD = {B1A, B1B, CCW};
-
-void setup()
-{
-  pinMode(MotE.TA, OUTPUT);
-  pinMode(MotE.TB, OUTPUT);
-  pinMode(MotD.TA, OUTPUT);
-  pinMode(MotD.TB, OUTPUT);
-}
 
 void rotateDigital(bool dir, byte pA, byte pB, bool en = true)
 {
@@ -73,28 +76,67 @@ void stop()
 
 void accelerate(int from, int to, int rate)
 {
-  for (int i = from; i < to; i+=rate)
+  for (int i = from; i < to; i += rate)
   {
     rotateAnalog(MotE.dir, MotE, i);
     rotateAnalog(MotD.dir, MotD, i);
     delay(2);
   }
-  
-
 }
 
-void forward()
+void forward(bool accel = true)
 {
-  accelerate(30, 255, 2);
+  if (accel)
+  {
+    accelerate(30, 255, 2);
+  }
+
   rotateAnalog(MotE.dir, MotE, 255);
   rotateAnalog(MotD.dir, MotD, 255);
 }
 
-                                
+void turnRight()
+{
+  rotateAnalog(MotE.dir, MotE, 255);
+  rotateAnalog(MotD.dir, MotD, 100);
+}
+
+void turnLeft()
+{
+  rotateAnalog(MotE.dir, MotE, 100);
+  rotateAnalog(MotD.dir, MotD, 255);
+}
+
+void curvaAoCentro(int SENSOR, void (*funcao)())
+{
+  if (!digitalRead(SENSOR)) // detecção do sensor de direção
+  {
+    while (digitalRead(SC)) // loop garante a curva até o centro
+    {
+      funcao();
+      delay(50);
+    }
+  }
+}
+
+void setup()
+{
+  pinMode(MotE.TA, OUTPUT);
+  pinMode(MotE.TB, OUTPUT);
+  pinMode(MotD.TA, OUTPUT);
+  pinMode(MotD.TB, OUTPUT);
+  forward();
+}
+
+/**
+ * @brief Caso o sensor da esquerda (SE) dispara, este está encima da linha,
+ * e deve garantir a curva à direita até que o sensor do centro seja ativado,
+ * e vice versa. Do contrário o veiculo segue em frente.
+ *
+ */
 void loop()
 {
-  forward();
-  delay(5000);
-  stop();
-  delay(2000);
-} 
+  curvaAoCentro(SE, &turnRight);
+  curvaAoCentro(SD, &turnLeft);
+  forward(false);
+}
