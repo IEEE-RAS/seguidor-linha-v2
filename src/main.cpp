@@ -31,10 +31,13 @@
 #define CW 1  // Horário
 #define CCW 0 // Anti-horário
 
+#define MAX_PWM 255
+#define RED_FATOR 0.25
+
 /**
  * @brief Estrutura de motor: Contém os pinos do motor e o sentido
  * de rotação para direção à frente
- * 
+ *
  */
 struct motor
 {
@@ -105,6 +108,10 @@ void rotateAnalog(bool dir, struct motor mt, byte pwm, bool en = true)
   rotateAnalog(dir, mt.TA, mt.TB, pwm, en);
 }
 
+/**
+ * @brief Para os motores levando todos os pinos de motores para LOW
+ *
+ */
 void stop()
 {
   digitalWrite(MotE.TA, LOW);
@@ -157,8 +164,8 @@ void forward(bool accel = true)
 void turnRight()
 {
 
-  rotateAnalog(MotE.dir, MotE, 255);
-  rotateAnalog(MotD.dir, MotD, 100);
+  rotateAnalog(MotE.dir, MotE, MAX_PWM);
+  rotateAnalog(MotD.dir, MotD, MAX_PWM * RED_FATOR);
 
 #ifdef __DEBUG__
   Serial.println("D");
@@ -171,8 +178,8 @@ void turnRight()
  */
 void turnLeft()
 {
-  rotateAnalog(MotE.dir, MotE, 100);
-  rotateAnalog(MotD.dir, MotD, 255);
+  rotateAnalog(MotE.dir, MotE, MAX_PWM * RED_FATOR);
+  rotateAnalog(MotD.dir, MotD, MAX_PWM);
 
 #ifdef __DEBUG__
   Serial.println("E");
@@ -225,8 +232,8 @@ void loop()
   Serial.print(digitalRead(SC));
   Serial.println(digitalRead(SD));
 #endif
-  curvaAoCentro(SE, &turnRight);
-  curvaAoCentro(SD, &turnLeft);
+  curvaAoCentro(SE, &turnLeft);
+  curvaAoCentro(SD, &turnRight);
   delay(50);
   forward(false);
 }
