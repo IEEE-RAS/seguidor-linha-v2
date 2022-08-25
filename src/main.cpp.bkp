@@ -214,111 +214,26 @@ void setup()
   pinMode(MotE.TB, OUTPUT);
   pinMode(MotD.TA, OUTPUT);
   pinMode(MotD.TB, OUTPUT);
-#ifdef __DEBUG__
   Serial.begin(9600);
-#endif
   forward();
 }
 
 /**
- * @brief Matrizes de estados de sensores, atuais e antigos
- * 
+ * @brief Caso o sensor da esquerda (SE) dispara, este está encima da linha,
+ * e deve garantir a curva à direita até que o sensor do centro seja ativado,
+ * e vice versa. Do contrário o veiculo segue em frente.
+ *
  */
-bool state[5] = {0, 0, 0, 0, 0}, oldState[5];
-
-/**
- * @brief Matriz de pinos de sensores IR
- * 
- */
-int dsarr[5] = {SEE, SE, SC, SD, SDD};
-
-
-/**
- * @brief Flags de desvio e estados individuais.
- * 
- */
-int stateOut = 0, stateOutOld = 0, detourCount = 0;
-bool takeDetour = 0;
-
-/**
- * @brief Atualiza os estados da matriz state e salva os estados antigos na matriz
- * oldState a partir dos valores lidos na matriz de pinos de sensores ds
- * 
- * @param ds matriz com os pinos dos sensors IR
- * @param nds numero de sensores na matriz ds
- * @param oldState matriz de estados de sensor salvos da iteração anterior
- * @param state matriz que deverá conter os últimos estados de sensor lidos
- * @param ns numero de estados de sensor
- */
-void updateStates(int ds[], int nds, bool (&oldState)[], bool (&state)[], int ns)
-{
-
-  for (int i = 0; i < ns; i++)
-  {
-    oldState[i] = state[i];
-  }
-
-  for (int d = 0; d < nds; d++)
-  {
-    state[d] = digitalRead(ds[d]);
-  }
-}
-
 void loop()
 {
-
-  stateOut = 0;
-
-  updateStates(dsarr, 5, oldState, state, 5);
-
-  /**
-   * @brief Concatena os bits dos estados de sensores
-   * em um unico byte representando o estado de maquina
-   * 
-   */
-  stateOut = stateOut | (state[1] << 2);
-  stateOut = stateOut | (state[2] << 1);
-  stateOut = stateOut | state[3];
-
-  /**
-   * @brief Avalia a mudança de estado da maquina e conta a 
-   * indicação de desvio usando os sensores mais externos
-   * 
-   */
-  if (state[0] != oldState[0])
-    if (state[0] && state[4])
-      detourCount++;
-
-  if (detourCount == 2)
-    takeDetour = !takeDetour;
-
-  /**
-   * @brief Executa a avaliação principal dos estados da máquina de estados
-   * 
-   */
-  if (stateOut != stateOutOld)
-  {
-    stateOutOld = stateOut;
-    switch (stateOut)
-    {
-    case 2:
-      forward(false);
-      break;
-    case 1:
-    case 3:
-      if (!takeDetour)
-        turnRight();
-      break;
-    case 6:
-    case 4:
-      if (!takeDetour)
-        turnLeft();
-      break;
-    case 7:
-      stop();
-    default:
-      break;
-    }
-  }
-  delay(5);
+#ifdef __DEBUG__
+  Serial.print("Sensores: ");
+  Serial.print(digitalRead(SE));
+  Serial.print(digitalRead(SC));
+  Serial.println(digitalRead(SD));
+#endif
+  curvaAoCentro(SE, &turnLeft);
+  curvaAoCentro(SD, &turnRight);
+  delay(10);
+  forward(false);
 }
