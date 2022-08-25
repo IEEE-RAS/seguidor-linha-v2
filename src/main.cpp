@@ -8,10 +8,10 @@
  * São nomeados de acordo com as entradas do módulo de ponte H utilizado
  *
  */
-#define A1A 6
-#define A1B 5
-#define B1A 11
-#define B1B 10
+#define A1A 10
+#define A1B 11
+#define B1A 5
+#define B1B 6
 
 /**
  * @brief Pinos dos sensores de linha, começando com o sensor mais à esquerda
@@ -31,8 +31,8 @@
 #define CW 1  // Horário
 #define CCW 0 // Anti-horário
 
-#define MAX_PWM 255
-#define RED_FATOR 0.25
+#define MAX_PWM 125
+#define RED_FATOR 0.10
 
 /**
  * @brief Estrutura de motor: Contém os pinos do motor e o sentido
