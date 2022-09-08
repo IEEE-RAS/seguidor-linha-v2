@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+#include <microM.h>
 // #define __DEBUG__
 
 /**
@@ -8,8 +8,8 @@
  * São nomeados de acordo com as entradas do módulo de ponte H utilizado
  *
  */
-#define A1A 10
-#define A1B 11
+#define A1A 8
+#define A1B 7
 #define B1A 5
 #define B1B 6
 
@@ -18,11 +18,11 @@
  * (SEE) passando pelo sensor ao centro (SC) até o sensor mais à direita (SDD)
  *
  */
-#define SEE A3
-#define SE A4
-#define SC A5
-#define SD A2
-#define SDD A7
+#define SEE 9
+#define SES 10
+#define SC 11
+#define SD 12
+#define SDD 13
 
 /**
  * @brief Definição auxiliar para sentido de rotação
@@ -32,7 +32,7 @@
 #define CCW 0 // Anti-horário
 
 #define MAX_PWM 100
-#define RED_FATOR 0.10
+#define RED_FATOR 0.25
 
 /**
  * @brief Estrutura de motor: Contém os pinos do motor e o sentido
@@ -131,8 +131,9 @@ void accelerate(int from, int to, int rate)
 {
   for (int i = from; i < to; i += rate)
   {
-    rotateAnalog(MotE.dir, MotE, i);
-    rotateAnalog(MotD.dir, MotD, i);
+    // rotateAnalog(MotE.dir, MotE, i);
+    // rotateAnalog(MotD.dir, MotD, i);
+    microM.Motors(i, i, 0, 0);
     delay(2);
   }
 }
@@ -149,8 +150,9 @@ void forward(bool accel = true)
     accelerate(30, 255, 2);
   }
 
-  rotateAnalog(MotE.dir, MotE, 255);
-  rotateAnalog(MotD.dir, MotD, 255);
+  // rotateAnalog(MotE.dir, MotE, 255);
+  // rotateAnalog(MotD.dir, MotD, 255);
+  microM.Motors(MAX_PWM, MAX_PWM, 0, 0);
 
 #ifdef __DEBUG__
   Serial.println("em frente");
@@ -164,8 +166,9 @@ void forward(bool accel = true)
 void turnRight()
 {
 
-  rotateAnalog(MotE.dir, MotE, MAX_PWM);
-  rotateAnalog(MotD.dir, MotD, MAX_PWM * RED_FATOR);
+  // rotateAnalog(MotE.dir, MotE, MAX_PWM);
+  // rotateAnalog(MotD.dir, MotD, MAX_PWM * RED_FATOR);
+  microM.Motors(MAX_PWM, MAX_PWM * RED_FATOR, 0, 0);
 
 #ifdef __DEBUG__
   Serial.println("D");
@@ -178,8 +181,9 @@ void turnRight()
  */
 void turnLeft()
 {
-  rotateAnalog(MotE.dir, MotE, MAX_PWM * RED_FATOR);
-  rotateAnalog(MotD.dir, MotD, MAX_PWM);
+  // rotateAnalog(MotE.dir, MotE, MAX_PWM * RED_FATOR);
+  // rotateAnalog(MotD.dir, MotD, MAX_PWM);
+  microM.Motors(MAX_PWM * RED_FATOR, MAX_PWM, 0, 0);
 
 #ifdef __DEBUG__
   Serial.println("E");
@@ -222,20 +226,19 @@ void setup()
 
 /**
  * @brief Matrizes de estados de sensores, atuais e antigos
- * 
+ *
  */
 bool state[5] = {0, 0, 0, 0, 0}, oldState[5];
 
 /**
  * @brief Matriz de pinos de sensores IR
- * 
+ *
  */
-int dsarr[5] = {SEE, SE, SC, SD, SDD};
-
+int dsarr[5] = {SEE, SES, SC, SD, SDD};
 
 /**
  * @brief Flags de desvio e estados individuais.
- * 
+ *
  */
 int stateOut = 0, stateOutOld = 0, detourCount = 0;
 bool takeDetour = 0;
@@ -243,14 +246,14 @@ bool takeDetour = 0;
 /**
  * @brief Atualiza os estados da matriz state e salva os estados antigos na matriz
  * oldState a partir dos valores lidos na matriz de pinos de sensores ds
- * 
+ *
  * @param ds matriz com os pinos dos sensors IR
  * @param nds numero de sensores na matriz ds
  * @param oldState matriz de estados de sensor salvos da iteração anterior
  * @param state matriz que deverá conter os últimos estados de sensor lidos
  * @param ns numero de estados de sensor
  */
-void updateStates(int ds[], int nds, bool (&oldState)[], bool (&state)[], int ns)
+void updateStates(int ds[], int nds, bool oldState[], bool state[], int ns)
 {
 
   for (int i = 0; i < ns; i++)
@@ -260,8 +263,22 @@ void updateStates(int ds[], int nds, bool (&oldState)[], bool (&state)[], int ns
 
   for (int d = 0; d < nds; d++)
   {
-    state[d] = digitalRead(ds[d]);
+    state[d] = !digitalRead(ds[d]);
   }
+}
+
+/**
+ * @brief Concatena os bits dos estados de sensores
+ * em um unico byte representando o estado de maquina
+ *
+ * @param stateOut estado de saída
+ * @param state matriz com os estados a serem concatenados
+ */
+void concatStates(int &stateOut, bool state[])
+{
+  stateOut = stateOut | (state[1] << 2);
+  stateOut = stateOut | (state[2] << 1);
+  stateOut = stateOut | state[3];
 }
 
 void loop()
@@ -274,16 +291,14 @@ void loop()
   /**
    * @brief Concatena os bits dos estados de sensores
    * em um unico byte representando o estado de maquina
-   * 
+   *
    */
-  stateOut = stateOut | (state[1] << 2);
-  stateOut = stateOut | (state[2] << 1);
-  stateOut = stateOut | state[3];
+  concatStates(stateOut, state);
 
   /**
-   * @brief Avalia a mudança de estado da maquina e conta a 
+   * @brief Avalia a mudança de estado da maquina e conta a
    * indicação de desvio usando os sensores mais externos
-   * 
+   *
    */
   if (state[0] != oldState[0])
     if (state[0] && state[4])
@@ -294,7 +309,7 @@ void loop()
 
   /**
    * @brief Executa a avaliação principal dos estados da máquina de estados
-   * 
+   *
    */
   if (stateOut != stateOutOld)
   {
