@@ -47,66 +47,6 @@ struct motor
 
 struct motor MotE = {A1A, A1B, CW}, MotD = {B1A, B1B, CCW};
 
-/**
- * @brief Provoca a rotação de motor de forma digital binária (velocidade máxima)
- *
- * @param dir direção da rotação
- * @param pA pino A do motor
- * @param pB pino B do motor
- * @param en habilita a saída para o motor
- */
-void rotateDigital(bool dir, byte pA, byte pB, bool en = true)
-{
-  byte pLow = dir ? pA : pB;
-  byte pHigh = dir ? pB : pA;
-
-  digitalWrite(pLow, LOW);
-  digitalWrite(pHigh, en);
-}
-
-/**
- * @brief Provoca a rotação de motor de forma digital binária (velocidade máxima)
- *
- * @param dir direção de rotação
- * @param mt estrutura contendo informações do motor
- * @param en habilita a saída para o motor
- */
-void rotateDigital(bool dir, struct motor mt, bool en = true)
-{
-  rotateDigital(dir, mt.TA, mt.TA, en);
-}
-
-/**
- * @brief Provoca a rotação de um motor de forma analógica (PWM)
- *
- * @param dir direção de rotação
- * @param pA pino A do motor
- * @param pB pino B do motor
- * @param pwm valor de PWM a ser enviado para o pino ativo
- * @param en habilita a saída para o motor
- */
-void rotateAnalog(bool dir, byte pA, byte pB, byte pwm, bool en = true)
-{
-  byte pLow = dir ? pA : pB;
-  byte pHigh = dir ? pB : pA;
-  byte state = en ? pwm : LOW;
-
-  digitalWrite(pLow, LOW);
-  analogWrite(pHigh, state);
-}
-
-/**
- * @brief Provoca a rotação de um motor de forma analógica (PWM)
- *
- * @param dir direção de rotação
- * @param mt estrutura contendo informações do motor
- * @param pwm valor de PWM a ser enviado para o pino ativo
- * @param en habilita a saída para o motor
- */
-void rotateAnalog(bool dir, struct motor mt, byte pwm, bool en = true)
-{
-  rotateAnalog(dir, mt.TA, mt.TB, pwm, en);
-}
 
 /**
  * @brief Para os motores levando todos os pinos de motores para LOW
@@ -190,27 +130,6 @@ void turnLeft()
 #endif
 }
 
-/**
- * @brief Avalia o estado do sensor (SENSOR) e mantém a função de curva até que o sensor do centro
- * seja detectado
- *
- * @param SENSOR sensor de lado a ser avaliado
- * @param funcao função de curva a ser executada
- */
-void curvaAoCentro(int SENSOR, void (*funcao)())
-{
-  if (!digitalRead(SENSOR)) // detecção do sensor de direção
-  {
-    while (digitalRead(SC)) // loop garante a curva até o centro
-    {
-#ifdef __DEBUG__
-      Serial.print("curva: ");
-#endif
-      funcao();
-      delay(50);
-    }
-  }
-}
 
 void setup()
 {
