@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <microM.h>
+#include <SoftwareSerial.h>
 // #define __DEBUG__
 
 /**
@@ -35,6 +36,15 @@
 #define RED_FATOR 0.25
 
 /**
+ * @brief Constantes de comunicação Bluetooth
+ * 
+ */
+#define BTRX 2
+#define BTTX 3
+#define BTKEY A5
+#define BTBAUD 38400
+
+/**
  * @brief Estrutura de motor: Contém os pinos do motor e o sentido
  * de rotação para direção à frente
  *
@@ -46,6 +56,9 @@ struct motor
 };
 
 struct motor MotE = {A1A, A1B, CW}, MotD = {B1A, B1B, CCW};
+
+SoftwareSerial btSerial(BTRX, BTTX);
+String cmd = "";
 
 
 /**
@@ -137,6 +150,10 @@ void setup()
   pinMode(MotE.TB, OUTPUT);
   pinMode(MotD.TA, OUTPUT);
   pinMode(MotD.TB, OUTPUT);
+
+  pinMode(BTKEY, OUTPUT);
+  btSerial.begin(BTBAUD);
+
 #ifdef __DEBUG__
   Serial.begin(9600);
 #endif
