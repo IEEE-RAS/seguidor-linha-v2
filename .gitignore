@@ -36,3 +36,6 @@
 
 # Build files
 .pio/build
+.pio/*.checksum
+
+*.bkp
