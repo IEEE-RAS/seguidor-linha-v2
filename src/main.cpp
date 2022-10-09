@@ -219,12 +219,12 @@ void loop()
    * indicação de desvio usando os sensores mais externos
    *
    */
-  if (state[0] != oldState[0])
-    if (state[0] && state[4])
-      detourCount++;
+  // if (state[0] != oldState[0])
+  //   if (state[0] && state[4])
+  //     detourCount++;
 
-  if (detourCount == 2)
-    takeDetour = !takeDetour;
+  // if (detourCount == 2)
+  //   takeDetour = !takeDetour;
 
   /**
    * @brief Executa a avaliação principal dos estados da máquina de estados
