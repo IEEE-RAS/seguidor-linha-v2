@@ -37,11 +37,11 @@
 
 /**
  * @brief Constantes de comunicação Bluetooth
- * 
+ *
  */
 #define BTRX 2
 #define BTTX 3
-#define BTKEY A5
+#define BTKEY 4
 #define BTBAUD 38400
 
 /**
@@ -58,8 +58,11 @@ struct motor
 struct motor MotE = {A1A, A1B, CW}, MotD = {B1A, B1B, CCW};
 
 SoftwareSerial btSerial(BTRX, BTTX);
-String cmd = "";
+String command = "";
+bool togKey = LOW;
 
+char cmdChar = ' ';
+char cmdFlag = false;
 
 /**
  * @brief Para os motores levando todos os pinos de motores para LOW
@@ -143,16 +146,19 @@ void turnLeft()
 #endif
 }
 
-
 void setup()
 {
+  pinMode(LED_BUILTIN, OUTPUT);
+
   pinMode(MotE.TA, OUTPUT);
   pinMode(MotE.TB, OUTPUT);
   pinMode(MotD.TA, OUTPUT);
   pinMode(MotD.TB, OUTPUT);
 
   pinMode(BTKEY, OUTPUT);
+  digitalWrite(BTKEY, LOW);
   btSerial.begin(BTBAUD);
+  btSerial.write("SEGLIN v2 BT\n");
 
 #ifdef __DEBUG__
   Serial.begin(9600);
@@ -231,7 +237,6 @@ void loop()
    */
   concatStates(stateOut, state);
 
-
   /**
    * @brief Executa a avaliação principal dos estados da máquina de estados
    *
@@ -246,11 +251,11 @@ void loop()
       break;
     case 1:
     case 3:
-        turnRight();
+      turnRight();
       break;
     case 6:
     case 4:
-        turnLeft();
+      turnLeft();
       break;
     case 7:
       stop();
@@ -258,5 +263,34 @@ void loop()
       break;
     }
   }
+
+  if (btSerial.available())
+  {
+    while (btSerial.available())
+    {
+      cmdChar = (char)btSerial.read();
+      command += cmdChar;
+      if (command.compareTo("CM+") == 0)
+      {
+        command = "";
+        cmdFlag = true;
+      }
+    }
+    btSerial.write("OK");
+    if (cmdFlag)
+    {
+      cmdFlag = false;
+      if (command.compareTo("KEY\r\n") == 0)
+      {
+        togKey = !togKey;
+        digitalWrite(LED_BUILTIN, togKey);
+        btSerial.write("+KEY:");
+        btSerial.write(togKey ? "HIGH" : "LOW");
+      }
+    }
+    command = "";
+    btSerial.write("\r\n");
+  }
+
   delay(5);
 }
