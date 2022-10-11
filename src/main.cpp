@@ -41,8 +41,8 @@
  */
 #define BTRX 2
 #define BTTX 3
-#define BTKEY 4
-#define BTBAUD 38400
+// #define BTKEY 4
+#define BTBAUD 9600
 
 /**
  * @brief Estrutura de motor: Contém os pinos do motor e o sentido
@@ -90,7 +90,7 @@ void accelerate(int from, int to, int rate)
     // rotateAnalog(MotE.dir, MotE, i);
     // rotateAnalog(MotD.dir, MotD, i);
     microM.Motors(i, i, 0, 0);
-    delay(2);
+    delay(5);
   }
 }
 
@@ -103,7 +103,7 @@ void forward(bool accel = true)
 {
   if (accel)
   {
-    accelerate(30, 255, 2);
+    accelerate(30, MAX_PWM, 2);
   }
 
   // rotateAnalog(MotE.dir, MotE, 255);
@@ -155,15 +155,15 @@ void setup()
   pinMode(MotD.TA, OUTPUT);
   pinMode(MotD.TB, OUTPUT);
 
-  pinMode(BTKEY, OUTPUT);
-  digitalWrite(BTKEY, LOW);
+  // pinMode(BTKEY, OUTPUT);
+  // digitalWrite(BTKEY, LOW);
   btSerial.begin(BTBAUD);
   btSerial.write("SEGLIN v2 BT\n");
 
 #ifdef __DEBUG__
   Serial.begin(9600);
 #endif
-  forward();
+  // forward();
 }
 
 /**
@@ -184,6 +184,12 @@ int dsarr[5] = {SEE, SES, SC, SD, SDD};
  */
 int stateOut = 0, stateOutOld = 0, detourCount = 0;
 bool takeDetour = 0;
+
+/**
+ * @brief Flag de estado automato
+ *
+ */
+bool autoState = 0;
 
 /**
  * @brief Atualiza os estados da matriz state e salva os estados antigos na matriz
@@ -241,26 +247,29 @@ void loop()
    * @brief Executa a avaliação principal dos estados da máquina de estados
    *
    */
-  if (stateOut != stateOutOld)
+  if (autoState)
   {
-    stateOutOld = stateOut;
-    switch (stateOut)
+    if (stateOut != stateOutOld)
     {
-    case 2:
-      forward(false);
-      break;
-    case 1:
-    case 3:
-      turnRight();
-      break;
-    case 6:
-    case 4:
-      turnLeft();
-      break;
-    case 7:
-      stop();
-    default:
-      break;
+      stateOutOld = stateOut;
+      switch (stateOut)
+      {
+      case 2:
+        forward(false);
+        break;
+      case 1:
+      case 3:
+        turnRight();
+        break;
+      case 6:
+      case 4:
+        turnLeft();
+        break;
+      case 7:
+        stop();
+      default:
+        break;
+      }
     }
   }
 
@@ -276,17 +285,20 @@ void loop()
         cmdFlag = true;
       }
     }
-    btSerial.write("OK");
     if (cmdFlag)
     {
       cmdFlag = false;
-      if (command.compareTo("KEY\r\n") == 0)
+      if (command.compareTo("START\r\n") == 0)
       {
-        togKey = !togKey;
-        digitalWrite(LED_BUILTIN, togKey);
-        btSerial.write("+KEY:");
-        btSerial.write(togKey ? "HIGH" : "LOW");
+        forward();
+        autoState = true;
       }
+      if (command.compareTo("STOP\r\n") == 0)
+      {
+        stop();
+        autoState = false;
+      }
+      btSerial.write("OK");
     }
     command = "";
     btSerial.write("\r\n");
