@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <microM.h>
+#include <SoftwareSerial.h>
 // #define __DEBUG__
 
 /**
@@ -35,6 +36,15 @@
 #define RED_FATOR 0.25
 
 /**
+ * @brief Constantes de comunicação Bluetooth
+ *
+ */
+#define BTRX 2
+#define BTTX 3
+// #define BTKEY 4
+#define BTBAUD 9600
+
+/**
  * @brief Estrutura de motor: Contém os pinos do motor e o sentido
  * de rotação para direção à frente
  *
@@ -47,6 +57,12 @@ struct motor
 
 struct motor MotE = {A1A, A1B, CW}, MotD = {B1A, B1B, CCW};
 
+SoftwareSerial btSerial(BTRX, BTTX);
+String command = "";
+bool togKey = LOW;
+
+char cmdChar = ' ';
+char cmdFlag = false;
 
 /**
  * @brief Para os motores levando todos os pinos de motores para LOW
@@ -74,7 +90,7 @@ void accelerate(int from, int to, int rate)
     // rotateAnalog(MotE.dir, MotE, i);
     // rotateAnalog(MotD.dir, MotD, i);
     microM.Motors(i, i, 0, 0);
-    delay(2);
+    delay(5);
   }
 }
 
@@ -87,7 +103,7 @@ void forward(bool accel = true)
 {
   if (accel)
   {
-    accelerate(30, 255, 2);
+    accelerate(30, MAX_PWM, 2);
   }
 
   // rotateAnalog(MotE.dir, MotE, 255);
@@ -130,17 +146,24 @@ void turnLeft()
 #endif
 }
 
-
 void setup()
 {
+  pinMode(LED_BUILTIN, OUTPUT);
+
   pinMode(MotE.TA, OUTPUT);
   pinMode(MotE.TB, OUTPUT);
   pinMode(MotD.TA, OUTPUT);
   pinMode(MotD.TB, OUTPUT);
+
+  // pinMode(BTKEY, OUTPUT);
+  // digitalWrite(BTKEY, LOW);
+  btSerial.begin(BTBAUD);
+  btSerial.write("SEGLIN v2 BT\n");
+
 #ifdef __DEBUG__
   Serial.begin(9600);
 #endif
-  forward();
+  // forward();
 }
 
 /**
@@ -161,6 +184,12 @@ int dsarr[5] = {SEE, SES, SC, SD, SDD};
  */
 int stateOut = 0, stateOutOld = 0, detourCount = 0;
 bool takeDetour = 0;
+
+/**
+ * @brief Flag de estado automato
+ *
+ */
+bool autoState = 0;
 
 /**
  * @brief Atualiza os estados da matriz state e salva os estados antigos na matriz
@@ -214,32 +243,66 @@ void loop()
    */
   concatStates(stateOut, state);
 
-
   /**
    * @brief Executa a avaliação principal dos estados da máquina de estados
    *
    */
-  if (stateOut != stateOutOld)
+  if (autoState)
   {
-    stateOutOld = stateOut;
-    switch (stateOut)
+    if (stateOut != stateOutOld)
     {
-    case 2:
-      forward(false);
-      break;
-    case 1:
-    case 3:
+      stateOutOld = stateOut;
+      switch (stateOut)
+      {
+      case 2:
+        forward(false);
+        break;
+      case 1:
+      case 3:
         turnRight();
-      break;
-    case 6:
-    case 4:
+        break;
+      case 6:
+      case 4:
         turnLeft();
-      break;
-    case 7:
-      stop();
-    default:
-      break;
+        break;
+      case 7:
+        stop();
+      default:
+        break;
+      }
     }
   }
+
+  if (btSerial.available())
+  {
+    while (btSerial.available())
+    {
+      cmdChar = (char)btSerial.read();
+      command += cmdChar;
+      if (command.compareTo("CM+") == 0)
+      {
+        command = "";
+        cmdFlag = true;
+      }
+    }
+    if (cmdFlag)
+    {
+      cmdFlag = false;
+      if (command.compareTo("START\r\n") == 0)
+      {
+        forward();
+        autoState = true;
+      }
+      if (command.compareTo("STOP\r\n") == 0)
+      {
+        stop();
+        autoState = false;
+      }
+      btSerial.write("OK");
+    }
+    command = "";
+    btSerial.write("\r\n");
+  }
+
   delay(5);
 }
