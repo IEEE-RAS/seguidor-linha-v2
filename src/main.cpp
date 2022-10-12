@@ -307,7 +307,7 @@ void loop()
       cmdFlag = false;
       if (command.compareTo("START\r\n") == 0)
       {
-        forward();
+        forward(true);
         autoState = true;
       }
       if (command.compareTo("STOP\r\n") == 0)
