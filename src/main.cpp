@@ -45,6 +45,19 @@
 #define BTBAUD 9600
 
 /**
+ * @brief definição das características do estado
+ * task - ponteiro para a função executada no estado
+ * transition - array contendo as referencias para os proximos estados a partir de cada entrada
+ *
+ */
+typedef struct state
+{
+  char name[15];
+  void (*task)(void);
+  struct state *transition[8];
+} statet;
+
+/**
  * @brief Estrutura de motor: Contém os pinos do motor e o sentido
  * de rotação para direção à frente
  *
@@ -99,7 +112,7 @@ void accelerate(int from, int to, int rate)
  *
  * @param accel ativa ou desativa pequena aceleração para reduzir corrente
  */
-void forward(bool accel = true)
+void forward(bool accel)
 {
   if (accel)
   {
@@ -113,6 +126,11 @@ void forward(bool accel = true)
 #ifdef __DEBUG__
   Serial.println("em frente");
 #endif
+}
+
+void forward()
+{
+  forward(true);
 }
 
 /**
@@ -145,6 +163,16 @@ void turnLeft()
   Serial.println("E");
 #endif
 }
+
+#define ST_F &maquina[0]
+#define ST_CD &maquina[1]
+#define ST_CE &maquina[2]
+#define ST_P &maquina[3]
+statet maquina[4] = {
+    {"F", forward, {ST_F, ST_CD, ST_F, ST_CD, ST_CE, ST_P, ST_CE, ST_P}},
+    {"CD", turnRight, {ST_CD, ST_CD, ST_F, ST_CD, ST_CE, ST_P, ST_CE, ST_P}},
+    {"CE", turnLeft, {ST_CE, ST_CD, ST_F, ST_CD, ST_CE, ST_P, ST_CE, ST_P}},
+    {"P", stop, {ST_F, ST_P, ST_F, ST_P, ST_P, ST_P, ST_P, ST_P}}};
 
 void setup()
 {
@@ -218,16 +246,20 @@ void updateStates(int ds[], int nds, bool oldState[], bool state[], int ns)
 /**
  * @brief Concatena os bits dos estados de sensores
  * em um unico byte representando o estado de maquina
+ * Bit  2   1   0
+ * 0b   SE  SC  SD
  *
  * @param stateOut estado de saída
  * @param state matriz com os estados a serem concatenados
  */
 void concatStates(int &stateOut, bool state[])
 {
-  stateOut = stateOut | (state[1] << 2);
-  stateOut = stateOut | (state[2] << 1);
-  stateOut = stateOut | state[3];
+  stateOut = stateOut | (state[1] << 2); // Sensor da esquerda
+  stateOut = stateOut | (state[2] << 1); // Sensor do centro
+  stateOut = stateOut | state[3];        // Sensor da direita
 }
+
+statet *stateptr = ST_F;
 
 void loop()
 {
@@ -252,24 +284,9 @@ void loop()
     if (stateOut != stateOutOld)
     {
       stateOutOld = stateOut;
-      switch (stateOut)
-      {
-      case 2:
-        forward(false);
-        break;
-      case 1:
-      case 3:
-        turnRight();
-        break;
-      case 6:
-      case 4:
-        turnLeft();
-        break;
-      case 7:
-        stop();
-      default:
-        break;
-      }
+      stateptr->transition[stateOut];
+      stateptr->task();
+      btSerial.write(stateptr->name);
     }
   }
 
