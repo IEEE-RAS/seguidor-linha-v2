@@ -18,6 +18,12 @@ CM+STOP
 ```
 
 ## Hardware
+- DAGU MicroMagician
+- TP4056 BMS
+- MT3608 step-down
+- N20 micro motor
+- HC-06 módulo Bluetooth\
+  \
 A placa principal escolhida é a **DAGU MicroMagician**, uma placa compacta, compatível com Arduino e que já contém um módulo de controle de motor, receptor de infravermelho e acelerômetro, além de disposição
 para servos.\
 Para gestão de energia, um BMS (TP4056) para uma célula 18560 e um step-up MT3608.\
