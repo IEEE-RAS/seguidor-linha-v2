@@ -21,5 +21,5 @@ CM+STOP
 A placa principal escolhida é a **DAGU MicroMagician**, uma placa compacta, compatível com Arduino e que já contém um módulo de controle de motor, receptor de infravermelho e acelerômetro, além de disposição
 para servos.\
 Para gestão de energia, um BMS (TP4056) para uma célula 18560 e um step-up MT3608.\
-Dois motores com redução do tipo N20.
+Dois motores com redução do tipo N20.\
 O módulo utilizado é o HC-06, ou seja, a comunicação AT só é possível enquanto nenhuma conexão com outro dispositivo é estabelecida.
