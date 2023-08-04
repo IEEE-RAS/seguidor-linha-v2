@@ -7,6 +7,7 @@ Além do processo, esse robô pode servir como uma base para o desenvolvimento d
 
 ## Uso
 Este robô possui um adaptador bluetooth para controle e comunicação.\
+O nome configurado é `SEGLIN2`, mas o módulo permite configuração via comandos AT quando não conectado.\
 Ao ligar o sistema, o robô espera uma conexão com um terminal bluetooth e depende dos comandos para funcionar:
 ```bash
 # Iniciar a peseguição da linha
