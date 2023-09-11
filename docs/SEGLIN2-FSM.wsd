@@ -1,0 +1,27 @@
+@startuml SEGLIN2-FSM
+
+caption Máquina de estados para o Seguidor de linha v2
+
+state S <<start>>
+state F : frente()
+state E : curvaEsquerda()
+state D : curvaDireita()
+state P : parar()
+
+S -d-> F
+note right of S 
+Todas as transições 000
+retornam ao estado atual
+end note
+
+F -l-> E : 100, 110
+F -r-> D : 011, 001
+F -d--> P : 111, 101
+
+E -r---> F : 010
+D -l---> F : 010
+
+E -d--> P : 111, 101
+D -d--> P : 111, 101
+
+@enduml
