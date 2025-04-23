@@ -31,3 +31,8 @@ para servos.\
 Para gestão de energia, um BMS (TP4056) para uma célula 18560 e um step-up MT3608.\
 Dois motores com redução do tipo N20.\
 O módulo utilizado é o HC-06, ou seja, a comunicação AT só é possível enquanto nenhuma conexão com outro dispositivo é estabelecida.
+\
+\
+## Snapshot
+
+![estrutura principal do seguidor v2](/docs/snapshot1.png)
